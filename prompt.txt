@@ -1,0 +1,66 @@
+Problem: Fix Futoshiki Puzzle Generator for Unique Solutions
+
+Problem Description:
+Fix a C++ Futoshiki puzzle generator that currently creates puzzles with multiple solutions. The generator should produce puzzles with exactly one solution that can be solved using human-logical deduction without requiring guessing or brute-force methods.
+
+Programming Language: C++17
+
+Futoshiki Puzzle: Grid logic puzzle combining Latin square rules with inequality constraints between adjacent cells.
+
+Key Challenge: Random puzzle generation often produces puzzles with multiple solutions or solutions requiring guessing.
+
+Goal: Modify generator to only produce puzzles with a unique, logically deducible solution.
+
+Logical Deduction: Though fully automated checking of 'no guessing' is complex, the code approach checks uniqueness by confirming no alternative solutions exist and removes clues cautiously.
+
+Approach: Generate a complete solution, add constraints, then remove numbers one by one ensuring uniqueness of solution; backtrack if removal results in multiple solutions.
+
+Function Requirements:
+- Fix the existing Futoshiki puzzle generator
+- Ensure generated puzzles have exactly one solution
+- Implement uniqueness checking during cell removal
+- Handle constraint validation properly
+- Use backtracking to verify solution uniqueness
+
+Key Functions to Implement/Fix:
+bool check_for_multiple_solutions(Futoshiki& puzzle, int testCellRow, int testCellCol);
+bool generate_puzzle(Futoshiki& puzzle);
+bool is_valid(const Futoshiki& puzzle, int row, int col, int num);
+
+
+Constraints:
+1. Must generate puzzles with exactly one solution
+2. Solution must be reachable through logical deduction
+3. Cannot use random cell removal without uniqueness checking
+4. Must validate constraints properly during solving
+5. Use backtracking for solution verification
+6. Handle edge cases and boundary conditions
+7. Ensure memory-safe operations with vectors
+8. Use proper C++17 features and best practices
+
+Input:
+- Grid size (user input)
+- Random seed for reproducible generation
+
+Output:
+- Valid Futoshiki puzzle printed to console
+- Puzzle should have exactly one logical solution
+- Display format with numbers and comparison operators
+
+Example Structure:
+< v
+[ ] [ ] [ ]
+^ ```
+
+The original code has issues with:
+
+Random cell removal without checking solution uniqueness
+
+Improper constraint validation
+
+Multiple solutions being generated
+
+Lack of logical deduction verification
+
+The fix should ensure that every generated puzzle has exactly one solution that can be found through systematic logical reasoning without guessing.
+

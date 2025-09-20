@@ -1,0 +1,39 @@
+{
+  "programming_language": ["C++"],
+  "programming_language_version": "C++17",
+  "solution_file_path": ["solution.cpp"],
+  "test_file_path": ["test.cpp"],
+  "execution_file_path": "run.sh",
+  "task_type": "code_editing",
+  "complexity_rating": "medium",
+  "subject_labels": [
+    "Constraint Satisfaction Problems (CSP)",
+    "Puzzle Generation Algorithms",
+    "Backtracking & Search",
+    "Logical Deduction in Puzzles",
+    "C++ Programming"
+  ],
+  "difficulty": "Medium",
+  "estimated_completion_time_minutes": 60,
+  "test_coverage": {
+    "line_coverage": "90",
+    "branch_coverage": "85"
+  },
+  "dependencies": {
+    "test_dependencies": [
+      "Standard C++ libraries only",
+      "Tested with C++11 and above"
+    ]
+  },
+  "testing_requirements": {
+    "minimum_test_cases": 3,
+    "uniqueness_testing": true,
+    "constraint_validation": true,
+    "puzzle_generation": true,
+    "backtracking_verification": true
+  },
+  "background": "Futoshiki Puzzle: Grid logic puzzle combining Latin square rules with inequality constraints between adjacent cells. Key Challenge: Random puzzle generation often produces puzzles with multiple solutions or solutions requiring guessing. Goal: Modify generator to only produce puzzles with a unique, logically deducible solution. Logical Deduction: Though fully automated checking of 'no guessing' is complex, the code approach checks uniqueness by confirming no alternative solutions exist and removes clues cautiously. Approach: Generate a complete solution, add constraints, then remove numbers one by one ensuring uniqueness of solution; backtrack if removal results in multiple solutions.",
+  "adherence": "mostly_adheres",
+  "code_executable": "Yes",
+  "references": "Futoshiki puzzle rules: logic-based inequalities in a Latin-square grid, Standard backtracking solver with uniqueness checks, Logical uniqueness enforced by trial removals and solution counting"
+}
