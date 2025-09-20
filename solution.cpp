@@ -1,123 +1,86 @@
 #include <iostream>
 #include <vector>
-#include <ctime>
-#include <cstdlib>
-#include <random>
 #include <algorithm>
+#include <ctime>
+#include <cassert>
 
 struct Constraint {
-    int Ax, Ay; // coordinates cell A
-    int Bx, By; // coordinates cell B
-    char symbol; // '>', '<', 'v', '^'
+    int first_row, first_col;
+    int second_row, second_col;
+    char symbol;
 };
 
-struct Futoshiki {
+struct FutoshikiPuzzle {
     int size;
-    std::vector<std::vector<int>> grid;         // full solution grid
-    std::vector<std::vector<int>> display_grid; // puzzle grid with empty cells
+    std::vector<std::vector<int>> grid;
+    std::vector<std::vector<int>> display_grid;
     std::vector<Constraint> constraints;
 };
 
-int getRandomInt(int minInt, int maxInt) {
-    return (std::rand() % (maxInt - minInt + 1)) + minInt;
+int generateRandomInt(int min_val, int max_val) {
+    return (std::rand() % (max_val - min_val + 1)) + min_val;
 }
 
-bool validate_constraint(Futoshiki& puzzle, Constraint temp) {
-    if ((temp.Ax < 0) || (temp.Bx >= puzzle.size) || (temp.Ay < 0) || (temp.By >= puzzle.size))
+bool isValidConstraint(FutoshikiPuzzle& puzzle, Constraint constraint) {
+    if (constraint.first_row < 0 || constraint.second_row >= puzzle.size || 
+        constraint.first_col < 0 || constraint.second_col >= puzzle.size)
         return false;
-    else if ((temp.Ax != temp.Bx) && (temp.Ay != temp.By))
+        
+    if ((constraint.first_row != constraint.second_row) && (constraint.first_col != constraint.second_col))
         return false;
-    else if (((temp.Ax == temp.Bx) && (temp.By != temp.Ay + 1)) || ((temp.Ay == temp.By) && (temp.Bx != temp.Ax + 1)))
+        
+    if (((constraint.first_row == constraint.second_row) && (constraint.second_col != constraint.first_col + 1)) || 
+        ((constraint.first_col == constraint.second_col) && (constraint.second_row != constraint.first_row + 1)))
         return false;
-    
-    for (const Constraint& other : puzzle.constraints) {
-        if ((other.Ax == temp.Ax) && (other.Bx == temp.Bx) && (other.Ay == temp.Ay) && (other.By == temp.By))
+
+    for (const Constraint& existing : puzzle.constraints) {
+        if ((existing.first_row == constraint.first_row) && (existing.second_row == constraint.second_row) && 
+            (existing.first_col == constraint.first_col) && (existing.second_col == constraint.second_col))
             return false;
     }
+    
     return true;
 }
 
-void add_constraints(Futoshiki& puzzle) {
-    int num_constraints = getRandomInt(puzzle.size, puzzle.size * puzzle.size / 2);
-    int row, col, rowB, colB;
-    char dir;
-    Constraint temp;
-    
-    while (num_constraints > 0) {
-        row = getRandomInt(0, puzzle.size - 1);
-        col = getRandomInt(0, puzzle.size - 1);
-        dir = (getRandomInt(0, 1) == 0) ? 'V' : 'H';
-        
-        if (dir == 'V') {
-            rowB = row + 1;
-            colB = col;
-        } else {
-            rowB = row;
-            colB = col + 1;
-        }
-        
-        temp = {row, col, rowB, colB, 'X'};
-        if (!validate_constraint(puzzle, temp))
-            continue;
-            
-        if ((puzzle.grid[row][col] < puzzle.grid[rowB][colB]) && (dir == 'V'))
-            temp.symbol = '<';
-        else if ((puzzle.grid[row][col] < puzzle.grid[rowB][colB]) && (dir == 'H'))
-            temp.symbol = '^';
-        else if ((puzzle.grid[row][col] > puzzle.grid[rowB][colB]) && (dir == 'V'))
-            temp.symbol = '>';
-        else
-            temp.symbol = 'v';
-            
-        puzzle.constraints.push_back(temp);
-        num_constraints--;
-    }
-}
-
-bool is_valid(const Futoshiki& puzzle, int row, int col, int num) {
-    // Check row and column constraints
+bool isValidPlacement(const FutoshikiPuzzle& puzzle, int row, int col, int num) {
     for (int i = 0; i < puzzle.size; ++i) {
         if (puzzle.grid[row][i] == num || puzzle.grid[i][col] == num)
             return false;
     }
     
-    // Check inequality constraints
-    for (const auto& constraint : puzzle.constraints) {
-        if ((constraint.Ax == row && constraint.Ay == col) || (constraint.Bx == row && constraint.By == col)) {
-            int other_row = (constraint.Ax == row && constraint.Ay == col) ? constraint.Bx : constraint.Ax;
-            int other_col = (constraint.Ay == col && constraint.Ax == row) ? constraint.By : constraint.Ay;
-            
-            if (puzzle.grid[other_row][other_col] != 0) {
-                if (constraint.Ax == row && constraint.Ay == col) {
-                    // This cell is A in constraint A symbol B
-                    if ((constraint.symbol == '>' && num <= puzzle.grid[other_row][other_col]) ||
-                        (constraint.symbol == '<' && num >= puzzle.grid[other_row][other_col]) ||
-                        (constraint.symbol == 'v' && num <= puzzle.grid[other_row][other_col]) ||
-                        (constraint.symbol == '^' && num >= puzzle.grid[other_row][other_col]))
-                        return false;
-                } else {
-                    // This cell is B in constraint A symbol B
-                    if ((constraint.symbol == '>' && puzzle.grid[other_row][other_col] <= num) ||
-                        (constraint.symbol == '<' && puzzle.grid[other_row][other_col] >= num) ||
-                        (constraint.symbol == 'v' && puzzle.grid[other_row][other_col] <= num) ||
-                        (constraint.symbol == '^' && puzzle.grid[other_row][other_col] >= num))
-                        return false;
-                }
+    for (const Constraint& constraint : puzzle.constraints) {
+        if (constraint.first_row == row && constraint.first_col == col) {
+            int other_value = puzzle.grid[constraint.second_row][constraint.second_col];
+            if (other_value != 0) {
+                if (constraint.symbol == '>' && num <= other_value) return false;
+                if (constraint.symbol == '<' && num >= other_value) return false;
+                if (constraint.symbol == 'v' && num <= other_value) return false;
+                if (constraint.symbol == '^' && num >= other_value) return false;
+            }
+        } else if (constraint.second_row == row && constraint.second_col == col) {
+            int other_value = puzzle.grid[constraint.first_row][constraint.first_col];
+            if (other_value != 0) {
+                if (constraint.symbol == '>' && other_value <= num) return false;
+                if (constraint.symbol == '<' && other_value >= num) return false;
+                if (constraint.symbol == 'v' && other_value <= num) return false;
+                if (constraint.symbol == '^' && other_value >= num) return false;
             }
         }
     }
+    
     return true;
 }
 
-bool solve(Futoshiki& puzzle) {
+bool solvePuzzle(FutoshikiPuzzle& puzzle) {
     for (int row = 0; row < puzzle.size; ++row) {
         for (int col = 0; col < puzzle.size; ++col) {
             if (puzzle.grid[row][col] == 0) {
                 for (int num = 1; num <= puzzle.size; ++num) {
-                    if (is_valid(puzzle, row, col, num)) {
+                    if (isValidPlacement(puzzle, row, col, num)) {
                         puzzle.grid[row][col] = num;
-                        if (solve(puzzle))
+                        if (solvePuzzle(puzzle)) {
                             return true;
+                        }
                         puzzle.grid[row][col] = 0;
                     }
                 }
@@ -128,211 +91,152 @@ bool solve(Futoshiki& puzzle) {
     return true;
 }
 
-bool check_for_multiple_solutions(Futoshiki& puzzle, int testCellRow, int testCellCol) {
-    Futoshiki testPuzzle = puzzle;
-    testPuzzle.grid = testPuzzle.display_grid;
+bool hasUniqueSolution(FutoshikiPuzzle puzzle) {
+    std::vector<std::vector<int>> original_grid = puzzle.grid;
     int solution_count = 0;
-
-    for (int i = 1; i <= puzzle.size; ++i) {
-        if (is_valid(testPuzzle, testCellRow, testCellCol, i)) {
-            testPuzzle.grid[testCellRow][testCellCol] = i;
-            if (solve(testPuzzle)) {
-                solution_count++;
-                if (solution_count > 1) return true; // Multiple solutions detected
+    
+    if (solvePuzzle(puzzle)) {
+        solution_count = 1;
+        std::vector<std::vector<int>> first_solution = puzzle.grid;
+        
+        puzzle.grid = original_grid;
+        
+        for (int row = 0; row < puzzle.size && solution_count == 1; ++row) {
+            for (int col = 0; col < puzzle.size && solution_count == 1; ++col) {
+                if (original_grid[row][col] == 0) {
+                    for (int num = puzzle.size; num >= 1; --num) {
+                        if (isValidPlacement(puzzle, row, col, num)) {
+                            puzzle.grid[row][col] = num;
+                            if (solvePuzzle(puzzle)) {
+                                if (puzzle.grid != first_solution) {
+                                    solution_count = 2;
+                                    break;
+                                }
+                            }
+                            puzzle.grid = original_grid;
+                        }
+                    }
+                }
             }
-            testPuzzle.grid[testCellRow][testCellCol] = 0;
         }
     }
-    return false;
+    
+    return solution_count == 1;
 }
 
-bool generate_puzzle(Futoshiki& puzzle) {
-    std::srand(std::time(0));
-    puzzle.grid.assign(puzzle.size, std::vector<int>(puzzle.size, 0));
-
-    if (!solve(puzzle)) return false;
-    add_constraints(puzzle);
-
-    puzzle.display_grid = puzzle.grid;
-    int cells_to_remove = puzzle.size * puzzle.size * 3 / 4;
-    int removed_cells = 0;
-    std::vector<int> cannotRemove;
-    int attempts = 0;
-    const int MAX_ATTEMPTS = puzzle.size * puzzle.size * 2;
-
-    while (cells_to_remove > 0 && attempts < MAX_ATTEMPTS) {
-        attempts++;
-        int row = getRandomInt(0, puzzle.size - 1);
-        int col = getRandomInt(0, puzzle.size - 1);
-
-        if (puzzle.display_grid[row][col] == 0) continue;
-
-        int cellIndex = row * puzzle.size + col;
-
-        if (std::find(cannotRemove.begin(), cannotRemove.end(), cellIndex) != cannotRemove.end())
-            continue;
-
-        int temp = puzzle.display_grid[row][col];
-        puzzle.display_grid[row][col] = 0;
-
-        if (check_for_multiple_solutions(puzzle, row, col)) {
-            puzzle.display_grid[row][col] = temp;
-            cannotRemove.push_back(cellIndex);
+FutoshikiPuzzle generatePuzzle(int puzzle_size) {
+    std::srand(static_cast<unsigned>(std::time(nullptr)));
+    
+    FutoshikiPuzzle puzzle;
+    puzzle.size = puzzle_size;
+    puzzle.grid.assign(puzzle_size, std::vector<int>(puzzle_size, 0));
+    puzzle.display_grid.assign(puzzle_size, std::vector<int>(puzzle_size, 0));
+    
+    if (!solvePuzzle(puzzle)) {
+        for (int i = 0; i < puzzle_size; ++i) {
+            for (int j = 0; j < puzzle_size; ++j) {
+                puzzle.grid[i][j] = ((i + j) % puzzle_size) + 1;
+            }
+        }
+    }
+    
+    int constraint_count = generateRandomInt(puzzle_size, puzzle_size * 2);
+    for (int i = 0; i < constraint_count; ++i) {
+        Constraint new_constraint;
+        new_constraint.first_row = generateRandomInt(0, puzzle_size - 1);
+        new_constraint.first_col = generateRandomInt(0, puzzle_size - 1);
+        
+        if (generateRandomInt(0, 1) == 0 && new_constraint.first_col + 1 < puzzle_size) {
+            new_constraint.second_row = new_constraint.first_row;
+            new_constraint.second_col = new_constraint.first_col + 1;
+        } else if (new_constraint.first_row + 1 < puzzle_size) {
+            new_constraint.second_row = new_constraint.first_row + 1;
+            new_constraint.second_col = new_constraint.first_col;
         } else {
-            cells_to_remove--;
-            removed_cells++;
+            continue;
+        }
+        
+        int first_val = puzzle.grid[new_constraint.first_row][new_constraint.first_col];
+        int second_val = puzzle.grid[new_constraint.second_row][new_constraint.second_col];
+        
+        if (new_constraint.first_row == new_constraint.second_row) {
+            new_constraint.symbol = (first_val > second_val) ? '>' : '<';
+        } else {
+            new_constraint.symbol = (first_val > second_val) ? 'v' : '^';
+        }
+        
+        if (isValidConstraint(puzzle, new_constraint)) {
+            puzzle.constraints.push_back(new_constraint);
         }
     }
-    return true;
+    
+    puzzle.display_grid = puzzle.grid;
+    std::vector<std::pair<int, int>> positions;
+    for (int i = 0; i < puzzle_size; ++i) {
+        for (int j = 0; j < puzzle_size; ++j) {
+            positions.push_back({i, j});
+        }
+    }
+    
+    std::random_shuffle(positions.begin(), positions.end());
+    
+    for (const auto& pos : positions) {
+        int row = pos.first, col = pos.second;
+        int original_value = puzzle.display_grid[row][col];
+        
+        puzzle.display_grid[row][col] = 0;
+        
+        FutoshikiPuzzle test_puzzle = puzzle;
+        test_puzzle.grid = puzzle.display_grid;
+        
+        if (!hasUniqueSolution(test_puzzle)) {
+            puzzle.display_grid[row][col] = original_value;
+        }
+    }
+    
+    return puzzle;
 }
 
-void bubbleSort(std::vector<Constraint> &vectorObject, std::string sortBy) {
-    for (size_t i = 1; i < vectorObject.size(); ++i) {
-        for (size_t j = 0; j < vectorObject.size() - i; ++j) {
-            if (sortBy == "Ay") {
-                if (vectorObject[j].Ay > vectorObject[j+1].Ay) {
-                    std::swap(vectorObject[j], vectorObject[j+1]);
-                }
-            } else if (sortBy == "By") {
-                if ((vectorObject[j].By > vectorObject[j+1].By) && (vectorObject[j].Ay == vectorObject[j+1].Ay)) {
-                    std::swap(vectorObject[j], vectorObject[j + 1]);
-                }
+void printPuzzle(const FutoshikiPuzzle& puzzle) {
+    for (int i = 0; i < puzzle.size; ++i) {
+        for (int j = 0; j < puzzle.size; ++j) {
+            if (puzzle.display_grid[i][j] == 0) {
+                std::cout << "_ ";
             } else {
-                if ((vectorObject[j].Ax > vectorObject[j+1].Ax) && 
-                    (vectorObject[j].By == vectorObject[j+1].By) && 
-                    (vectorObject[j].Ay == vectorObject[j+1].Ay)) {
-                    std::swap(vectorObject[j], vectorObject[j + 1]);
-                }
+                std::cout << puzzle.display_grid[i][j] << " ";
             }
-        }
-    }
-}
-
-void sort_constraints(Futoshiki& puzzle) {
-    if (puzzle.constraints.empty()) return;
-    bubbleSort(puzzle.constraints, "Ay");
-    bubbleSort(puzzle.constraints, "By");
-    bubbleSort(puzzle.constraints, "Ax");
-}
-
-void print_solution(Futoshiki& puzzle) {
-    sort_constraints(puzzle);
-    int k = 0;
-    
-    for (int i = 0; i < puzzle.size; ++i) {
-        for (int j = 0; j < puzzle.size; ++j) {
-            if (puzzle.grid[i][j] != 0)
-                std::cout << "[" << puzzle.grid[i][j] << "]";
-            else
-                std::cout << "[ ]";
-
-            // Check for horizontal constraint
-            bool found_constraint = false;
-            for (size_t c = 0; c < puzzle.constraints.size(); ++c) {
-                if (puzzle.constraints[c].Ax == j && puzzle.constraints[c].Ay == i && 
-                    puzzle.constraints[c].Bx == j + 1 && puzzle.constraints[c].By == i) {
-                    std::cout << puzzle.constraints[c].symbol;
-                    found_constraint = true;
+            
+            for (const Constraint& constraint : puzzle.constraints) {
+                if (constraint.first_row == i && constraint.first_col == j && 
+                    constraint.second_row == i && constraint.second_col == j + 1) {
+                    std::cout << constraint.symbol << " ";
                     break;
                 }
-            }
-            if (!found_constraint) {
-                std::cout << " ";
             }
         }
         std::cout << std::endl;
         
-        // Print vertical constraints
         for (int j = 0; j < puzzle.size; ++j) {
-            std::cout << " ";
-            bool found_constraint = false;
-            for (size_t c = 0; c < puzzle.constraints.size(); ++c) {
-                if (puzzle.constraints[c].Ax == j && puzzle.constraints[c].Ay == i && 
-                    puzzle.constraints[c].Bx == j && puzzle.constraints[c].By == i + 1) {
-                    std::cout << puzzle.constraints[c].symbol;
-                    found_constraint = true;
+            for (const Constraint& constraint : puzzle.constraints) {
+                if (constraint.first_row == i && constraint.first_col == j && 
+                    constraint.second_row == i + 1 && constraint.second_col == j) {
+                    std::cout << constraint.symbol << " ";
+                    break;
+                } else {
+                    std::cout << "  ";
                     break;
                 }
             }
-            if (!found_constraint) {
-                std::cout << " ";
-            }
-            std::cout << "  ";
         }
-        std::cout << std::endl;
-    }
-}
-
-void print_puzzle(Futoshiki& puzzle) {
-    sort_constraints(puzzle);
-    
-    for (int i = 0; i < puzzle.size; ++i) {
-        for (int j = 0; j < puzzle.size; ++j) {
-            if (puzzle.display_grid[i][j] != 0)
-                std::cout << "[" << puzzle.display_grid[i][j] << "]";
-            else
-                std::cout << "[ ]";
-
-            // Check for horizontal constraint
-            bool found_constraint = false;
-            for (size_t c = 0; c < puzzle.constraints.size(); ++c) {
-                if (puzzle.constraints[c].Ax == j && puzzle.constraints[c].Ay == i && 
-                    puzzle.constraints[c].Bx == j + 1 && puzzle.constraints[c].By == i) {
-                    std::cout << puzzle.constraints[c].symbol;
-                    found_constraint = true;
-                    break;
-                }
-            }
-            if (!found_constraint) {
-                std::cout << " ";
-            }
-        }
-        std::cout << std::endl;
-        
-        // Print vertical constraints
-        for (int j = 0; j < puzzle.size; ++j) {
-            std::cout << " ";
-            bool found_constraint = false;
-            for (size_t c = 0; c < puzzle.constraints.size(); ++c) {
-                if (puzzle.constraints[c].Ax == j && puzzle.constraints[c].Ay == i && 
-                    puzzle.constraints[c].Bx == j && puzzle.constraints[c].By == i + 1) {
-                    std::cout << puzzle.constraints[c].symbol;
-                    found_constraint = true;
-                    break;
-                }
-            }
-            if (!found_constraint) {
-                std::cout << " ";
-            }
-            std::cout << "  ";
-        }
-        std::cout << std::endl;
+        if (i < puzzle.size - 1) std::cout << std::endl;
     }
 }
 
 int main() {
-    int size;
-    std::cout << "Enter the size of the grid: ";
-    std::cin >> size;
-
-    if (size < 3 || size > 9) {
-        std::cout << "Size must be between 3 and 9" << std::endl;
-        return 1;
-    }
-
-    Futoshiki puzzle;
-    puzzle.size = size;
-
-    std::cout << "Generating unique solution puzzle..." << std::endl;
-    if (generate_puzzle(puzzle)) {
-        std::cout << "Puzzle generated successfully!" << std::endl;
-        std::cout << "\nPuzzle to solve:" << std::endl;
-        print_puzzle(puzzle);
-        
-        std::cout << "\nSolution:" << std::endl;
-        print_solution(puzzle);
-    } else {
-        std::cout << "Failed to generate puzzle." << std::endl;
-    }
+    FutoshikiPuzzle puzzle = generatePuzzle(4);
+    
+    std::cout << "Generated Futoshiki Puzzle:" << std::endl;
+    printPuzzle(puzzle);
+    
     return 0;
 }

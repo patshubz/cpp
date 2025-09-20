@@ -6,7 +6,6 @@
 #include <random>
 #include <algorithm>
 
-// Copy essential structures and functions from solution.cpp here
 struct Constraint {
     int Ax, Ay;
     int Bx, By;
@@ -20,7 +19,7 @@ struct Futoshiki {
     std::vector<Constraint> constraints;
 };
 
-// Only include the functions we need to test
+
 int getRandomInt(int minInt, int maxInt) {
     return (std::rand() % (maxInt - minInt + 1)) + minInt;
 }
@@ -43,22 +42,19 @@ bool is_valid(const Futoshiki& puzzle, int row, int col, int num) {
     return true;
 }
 
-// Test functions
 void test_basic_functionality() {
     Futoshiki puzzle;
     puzzle.size = 3;
     puzzle.grid = std::vector<std::vector<int>>(3, std::vector<int>(3, 0));
     puzzle.constraints.clear();
 
-    // Test constraint validation
     Constraint valid = {0, 0, 0, 1, '>'};
     assert(validate_constraint(puzzle, valid));
     
-    // Test is_valid
     puzzle.grid[0][0] = 1;
-    assert(!is_valid(puzzle, 0, 1, 1)); // Same row
-    assert(!is_valid(puzzle, 1, 0, 1)); // Same column
-    assert(is_valid(puzzle, 1, 1, 2));  // Valid placement
+    assert(!is_valid(puzzle, 0, 1, 1)); 
+    assert(!is_valid(puzzle, 1, 0, 1)); 
+    assert(is_valid(puzzle, 1, 1, 2));
     
     std::cout << "✓ Basic functionality test passed" << std::endl;
 }
@@ -71,7 +67,7 @@ void test_constraint_validation() {
     Constraint valid = {0, 0, 0, 1, '>'};
     assert(validate_constraint(puzzle, valid));
 
-    Constraint invalid = {0, 0, 0, 3, '>'}; // Out of bounds
+    Constraint invalid = {0, 0, 0, 3, '>'}; 
     assert(!validate_constraint(puzzle, invalid));
     
     std::cout << "✓ Constraint validation test passed" << std::endl;
@@ -82,14 +78,13 @@ void test_grid_validity() {
     puzzle.size = 4;
     puzzle.grid = std::vector<std::vector<int>>(4, std::vector<int>(4, 0));
     
-    // Place numbers to test validity
     puzzle.grid[0][0] = 1;
     puzzle.grid[0][1] = 2;
     puzzle.grid[1][0] = 3;
     
-    assert(!is_valid(puzzle, 0, 2, 1)); // Duplicate in row
-    assert(!is_valid(puzzle, 2, 0, 1)); // Duplicate in column
-    assert(is_valid(puzzle, 1, 1, 4));  // Valid placement
+    assert(!is_valid(puzzle, 0, 2, 1)); 
+    assert(!is_valid(puzzle, 2, 0, 1)); 
+    assert(is_valid(puzzle, 1, 1, 4)); 
     
     std::cout << "✓ Grid validity test passed" << std::endl;
 }
